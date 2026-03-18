@@ -1,5 +1,4 @@
 import { NextRequest } from 'next/server';
-import { LLMClient, Config, HeaderUtils } from 'coze-coding-dev-sdk';
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -35,32 +34,81 @@ export async function POST(request: NextRequest) {
   try {
     const { messages } = await request.json() as { messages: Message[] };
 
-    const config = new Config();
-    const customHeaders = HeaderUtils.extractForwardHeaders(request.headers);
-    const client = new LLMClient(config, customHeaders);
+    const apiKey = process.env.DEEPSEEK_API_KEY;
+    if (!apiKey) {
+      return new Response(JSON.stringify({ error: 'API Key 未配置' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     const fullMessages: Message[] = [
       { role: 'system', content: SYSTEM_PROMPT },
       ...messages,
     ];
 
+    const response = await fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: fullMessages,
+        stream: true,
+        temperature: 0.7,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('DeepSeek API 错误:', errorText);
+      return new Response(JSON.stringify({ error: 'AI 服务暂时不可用' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+
     const stream = new ReadableStream({
       async start(controller) {
-        try {
-          const llmStream = client.stream(fullMessages, {
-            model: 'doubao-seed-1-6-flash-250615',
-            temperature: 0.7,
-          });
+        const reader = response.body?.getReader();
+        if (!reader) {
+          controller.close();
+          return;
+        }
 
-          for await (const chunk of llmStream) {
-            if (chunk.content) {
-              controller.enqueue(encoder.encode(chunk.content.toString()));
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6);
+                if (data === '[DONE]') continue;
+
+                try {
+                  const json = JSON.parse(data);
+                  const content = json.choices?.[0]?.delta?.content;
+                  if (content) {
+                    controller.enqueue(encoder.encode(content));
+                  }
+                } catch {
+                  // 忽略解析错误
+                }
+              }
             }
           }
           controller.close();
         } catch (error) {
-          console.error('LLM错误:', error);
+          console.error('流式读取错误:', error);
           controller.error(error);
         }
       },
@@ -74,6 +122,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    console.error('请求处理错误:', error);
     return new Response(JSON.stringify({ error: '服务器错误' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
