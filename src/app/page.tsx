@@ -26,7 +26,7 @@ export default function Home() {
       const welcomeMessage: Message = {
         id: Date.now().toString(),
         role: 'assistant',
-        content: '你好～我是这边做学习辅导安排的 😊 可以简单了解一下孩子现在是几年级吗？我帮你看看适合怎么安排～',
+        content: '您好您好，我是这边负责学习辅导的，方便了解一下孩子现在几年级吗？我帮您看看怎么安排比较合适',
         timestamp: new Date(),
       };
       setMessages([welcomeMessage]);
@@ -91,7 +91,7 @@ export default function Home() {
       setMessages((prev) => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: '抱歉，我遇到了一些问题，请稍后再试。',
+        content: '不好意思啊，刚才出了点问题，您能再说一次吗',
         timestamp: new Date(),
       }]);
     } finally {
