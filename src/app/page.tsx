@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface Message {
   id: string;
@@ -117,13 +116,13 @@ export default function Home() {
 
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {messages.map((message) => (
-          <div key={message.id} className={cn('flex items-start gap-3', message.role === 'user' ? 'flex-row-reverse' : '')}>
-            <div className={cn('w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0', message.role === 'user' ? 'bg-blue-500' : 'bg-green-500')}>
+          <div key={message.id} className={`flex items-start gap-3 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${message.role === 'user' ? 'bg-blue-500' : 'bg-green-500'}`}>
               {message.role === 'user' ? <User className="w-6 h-6 text-white" /> : <Bot className="w-6 h-6 text-white" />}
             </div>
-            <div className={cn('max-w-[70%] rounded-2xl px-4 py-3 shadow-sm', message.role === 'user' ? 'bg-blue-500 text-white rounded-tr-md' : 'bg-white text-gray-800 rounded-tl-md')}>
+            <div className={`max-w-[70%] rounded-2xl px-4 py-3 shadow-sm ${message.role === 'user' ? 'bg-blue-500 text-white rounded-tr-md' : 'bg-white text-gray-800 rounded-tl-md'}`}>
               <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
-              <p className={cn('text-xs mt-2', message.role === 'user' ? 'text-white/70' : 'text-gray-400')}>
+              <p className={`text-xs mt-2 ${message.role === 'user' ? 'text-white/70' : 'text-gray-400'}`}>
                 {message.timestamp.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
               </p>
             </div>
@@ -161,10 +160,9 @@ export default function Home() {
           <button
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
-            className={cn(
-              'w-12 h-12 rounded-full flex items-center justify-center transition-all',
+            className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
               input.trim() && !isLoading ? 'bg-green-500 hover:bg-green-600 text-white shadow-lg' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            )}
+            }`}
           >
             <Send className="w-5 h-5" />
           </button>
